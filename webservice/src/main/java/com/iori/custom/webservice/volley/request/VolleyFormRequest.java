@@ -1,47 +1,51 @@
 package com.iori.custom.webservice.volley.request;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.android.volley.NetworkResponse;
 import com.android.volley.VolleyError;
-import com.google.gson.Gson;
 import com.iori.custom.webservice.WebServiceInfo;
+import com.iori.custom.webservice.tools.GsonTool;
 
 import java.util.UUID;
 
 /**
  * ref https://www.jianshu.com/p/1684aadf8a41
  */
-public class VolleyFormRequest<Q,R> extends VolleyWebService<Q,R>{
+public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     private final String BOUNDARY = "------" + UUID.randomUUID().toString();
     private final String NEW_LINE = "\r\n";
     private final String MULTIPART_FORM_DATA = "multipart/form-data";
-    private FormError formError;
-    private Gson gson=new Gson();
+    private BaseVolleyRequestErrorListener formError;
 
-    public VolleyFormRequest(Context context, int method, String url, Class<R> responseType, BaseVolleySuccessListener successListener, FormError formError) {
-        super(context, method, url, responseType, successListener);
+    public VolleyFormRequest(Context context, int method, String url, Class<R> responseType, Class<E> errorEntityType, BaseVolleyRequestSuccessListener successListener, BaseVolleyRequestErrorListener formError) {
+        super(context, method, url, responseType,errorEntityType, successListener);
         this.formError=formError;
     }
 
     @Override
-    protected R parseResponseEntity(NetworkResponse response, String reponseString) {
-        R responseEntity= gson.fromJson(reponseString,getResponseType());
+    protected R parseResponseSuccessEntity(NetworkResponse response, String reponseString) {
+        R responseEntity= GsonTool.convertSingleEntity(getGson(),reponseString,getResponseType());
         return responseEntity;
     }
 
     @Override
-    protected void delegateResponseError(VolleyError error) {
+    protected void delegateResponseError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo) {
         if(formError != null){
-            formError.delegateResponseError(error,webServiceInfo);
+            formError.delegateResponseError(error,webServiceInfo,webServiceInfo.errorEntity);
         }
     }
 
     @Override
-    protected void parseResponseError(VolleyError error) {
+    protected E parseResponseErrorEntity(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+        E errorEntity=GsonTool.convertSingleEntity(getGson(),webServiceInfo.getResponseString(),getErrorEntityType());
+        return errorEntity;
+    }
+
+    @Override
+    protected void unexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo) {
         if(formError != null){
-            formError.parseResponseError(error,webServiceInfo);
+            formError.unexpectedError(error,webServiceInfo);
         }
     }
 
@@ -80,15 +84,5 @@ public class VolleyFormRequest<Q,R> extends VolleyWebService<Q,R>{
     @Override
     public String fetchBody() {
         return webServiceInfo.requestBody;
-    }
-
-    /**
-     *
-     * @param <Q> request type
-     * @param <R> response type
-     */
-    public static interface FormError<Q,R>{
-        void delegateResponseError(VolleyError error, WebServiceInfo<Q,R> webServiceInfo);
-        void parseResponseError(VolleyError error, WebServiceInfo<Q,R> webServiceInfo);
     }
 }

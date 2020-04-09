@@ -9,12 +9,13 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.VolleyError;
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.iori.custom.webservice.volley.request.VolleyFormRequest;
 import com.iori.custom.webservice.volley.request.VolleyWebService;
+import com.iori.custom.webservice.volley.request.test.LoginRequest;
+import com.iori.custom.webservice.volley.request.test.ServerListRequest;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private String loginRequestUrl=domain+apiurl;
     private String serverListUrl="https://service-demo.hotsnet.com/api/app/Site";
     private Button test_volley;
+    private Button test_volley_mutli;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initLayout(){
         test_volley=findViewById(R.id.test_volley);
+        test_volley_mutli=findViewById(R.id.test_volley_mutli);
     }
 
     private void triggerSetup(){
@@ -45,28 +48,87 @@ public class MainActivity extends AppCompatActivity {
                 testVolley();
             }
         });
+        test_volley_mutli.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                testVolleyMutil();
+            }
+        });
+    }
+    
+    private void testVolleyMutil(){
+        ServerListRequest serverListRequest=new ServerListRequest(this, new ServerListRequest.ServiceListRequestSuccessListener() {
+            @Override
+            public void requestSuccess(List<ServerListRequest.ServerInfo> responseEntity, WebServiceInfo<Map<String, String>, List<ServerListRequest.ServerInfo>,Object> webServiceInfo) {
+                Log.d("iori_VolleyMutil", "volleySuccess: response entity "+responseEntity.get(0).getName());
+                Log.d("iori_VolleyMutil", "volleySuccess: response webservieinfo response entity "+webServiceInfo.getResponseSuccessEntity().get(0).getName());
+                Log.d("iori_VolleyMutil", "volleySuccess: response webservieinfo request body "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
+                Log.d("iori_VolleyMutil", "volleySuccess: response webservieinfo request entity "+webServiceInfo.getRequestEntity()+" response entity "+webServiceInfo.getResponseSuccessEntity());
+            }
+        }, new ServerListRequest.ServiceListRequestErrorListener() {
+            @Override
+            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object,String> webServiceInfo, String errorEntity) {
+                Log.d("iori_VolleyMutil", "delegateResponseError request "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
+                Log.d("iori_VolleyMutil", "delegateResponseError webservieinfo request entity "+webServiceInfo.getRequestEntity()+" error entity "+webServiceInfo.errorEntity);
+            }
+
+            @Override
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object,Object> webServiceInfo) {
+                Log.d("iori_VolleyMutil", "unexpectedError request "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
+                Log.d("iori_VolleyMutil", "unexpectedError webserviceinfo request entity "+webServiceInfo.getRequestEntity());
+            }
+        });
+        WebServiceManager.getInstance().execute(serverListRequest);
+
+        LoginRequest loginRequest=new LoginRequest(this, new LoginRequest.LoginSuccessListener() {
+            @Override
+            public void requestSuccess(LoginRequest.LoginSuccessEntity responseEntity, WebServiceInfo<Map<String, String>, LoginRequest.LoginSuccessEntity,Object> webServiceInfo) {
+                Log.d("iori_VolleyMutil", "login success request "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString()+" token "+responseEntity.getToken());
+                Log.d("iori_VolleyMutil", "login success request webserviceinfo request entity "+webServiceInfo.getRequestEntity());
+            }
+        }, new LoginRequest.LoginFailListener() {
+            @Override
+            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object, LoginRequest.ErrorMessage> webServiceInfo, LoginRequest.ErrorMessage errorEntity) {
+                Log.d("iori_VolleyMutil", "login delegateResponseError: error response "+webServiceInfo.getResponseString()+" message "+errorEntity.getMessage());
+                Log.d("iori_VolleyMutil", "login delegateResponseError: webserviceinfo request entity "+webServiceInfo.getRequestEntity()+" request body "+webServiceInfo.requestBody);
+            }
+
+            @Override
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object, Object> webServiceInfo) {
+                Log.d("iori_VolleyMutil", "login unexpectedError: request body "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString()+" status code "+webServiceInfo.getResponseHttpStatusCode());
+                Log.d("iori_VolleyMutil", "login unexpectedError: webserviceinfo request entity "+webServiceInfo.getRequestEntity());
+            }
+        });
+
+        Map<String,String> loginRequestMap=new HashMap<>(10);
+        loginRequestMap.put("account","TAKO12345");
+        loginRequestMap.put("password","TAKO12345123");
+        loginRequest.setRequestHeaders(loginRequestMap);
+
+        WebServiceManager.getInstance().execute(loginRequest);
     }
 
     private void testVolley(){
-        VolleyFormRequest<Map<String, String>, String> serverListRequest=new VolleyFormRequest<Map<String, String>, String>(this, WebService.Method.GET, serverListUrl
-                , String.class
-                , new VolleyWebService.BaseVolleySuccessListener<Map<String,String>,String>() {
+        VolleyFormRequest<Map<String, String>, String,String> serverListRequest=new VolleyFormRequest<Map<String, String>, String,String>(this, WebService.Method.GET, serverListUrl+"123"
+                , String.class,String.class
+                , new VolleyWebService.BaseVolleyRequestSuccessListener<Map<String,String>,String>() {
 
             @Override
-            public void volleySuccess(String responseEntity, WebServiceInfo<Map<String, String>, String> webServiceInfo) {
+            public void requestSuccess(String responseEntity, WebServiceInfo<Map<String, String>, String,Object> webServiceInfo) {
                 Log.d("iori_webservice", "volleySuccess: status code "+webServiceInfo.getResponseHttpStatusCode()+" response entity "+responseEntity);
                 Log.d("iori_webservice", "volleySuccess:  response "+webServiceInfo.getResponseString());
                 Log.d("iori_webservice", "volleySuccess: request entity "+webServiceInfo.getRequestEntity()+" body "+webServiceInfo.requestBody);
             }
         }
-                , new VolleyFormRequest.FormError<Map<String, String>, String>() {
+                , new VolleyWebService.BaseVolleyRequestErrorListener<Map<String, String>, String>() {
             @Override
-            public void delegateResponseError(VolleyError error,WebServiceInfo<Map<String, String>, String> webServiceInfo) {
+            public void delegateResponseError(VolleyError error,WebServiceInfo<Map<String, String>,Object, String> webServiceInfo,String errorEntity) {
                 Log.d("iori_webservice", "delegateResponseError: "+" response code "+webServiceInfo.getResponseHttpStatusCode()+" string "+webServiceInfo.getResponseString());
+                Log.d("iori_webservice", "delegateResponseError: "+"error entity "+errorEntity);
             }
 
             @Override
-            public void parseResponseError(VolleyError error, WebServiceInfo<Map<String, String>, String> webServiceInfo) {
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>,Object, Object> webServiceInfo) {
                 Log.d("iori_webservice", "parseResponseError: "+" response code "+webServiceInfo.getResponseHttpStatusCode()+" string "+webServiceInfo.getResponseString());
             }
         }
@@ -79,26 +141,25 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d("iori_webservice", "testVolley2: login request start execute");
 
-        VolleyWebService.BaseVolleySuccessListener<Map<String, String>, LoginSuccessEntity> loginSuccessListener=new VolleyWebService.BaseVolleySuccessListener<Map<String, String>, LoginSuccessEntity>() {
+        VolleyWebService.BaseVolleyRequestSuccessListener<Map<String, String>, LoginRequest.LoginSuccessEntity> loginSuccessListener=new VolleyWebService.BaseVolleyRequestSuccessListener<Map<String, String>, LoginRequest.LoginSuccessEntity>() {
             @Override
-            public void volleySuccess(LoginSuccessEntity responseEntity, WebServiceInfo<Map<String, String>, LoginSuccessEntity> webServiceInfo) {
+            public void requestSuccess(LoginRequest.LoginSuccessEntity responseEntity, WebServiceInfo<Map<String, String>, LoginRequest.LoginSuccessEntity,Object> webServiceInfo) {
                 Log.d("iori_webservice", "login volleySuccess: response entity "+responseEntity+" request body "+webServiceInfo.requestBody);
                 Log.d("iori_webservice", "login volleySuccess: response string "+webServiceInfo.getResponseString());
                 Log.d("iori_webservice", "login volleySuccess: response entity token "+responseEntity.getToken()+" expire_timestamp "+responseEntity.getExpire_timestamp());
             }
         };
 
-        VolleyFormRequest<Map<String, String>, LoginSuccessEntity> loginRequest=new VolleyFormRequest<>(this, WebService.Method.POST, loginRequestUrl
-                , LoginSuccessEntity.class, loginSuccessListener, new VolleyFormRequest.FormError() {
+        VolleyFormRequest<Map<String, String>, LoginRequest.LoginSuccessEntity, LoginRequest.ErrorMessage> loginRequest=new VolleyFormRequest<>(this, WebService.Method.POST, loginRequestUrl+"1234"
+                , LoginRequest.LoginSuccessEntity.class, LoginRequest.ErrorMessage.class, loginSuccessListener, new VolleyWebService.BaseVolleyRequestErrorListener<Map<String, String>, LoginRequest.ErrorMessage>() {
             @Override
-            public void delegateResponseError(VolleyError error, WebServiceInfo webServiceInfo) {
-                ErrorMessage errorMessage=new Gson().fromJson(webServiceInfo.getResponseString(),ErrorMessage.class);
-                Log.d("iori_webservice", "login delegateResponseError: "+" response entity "+webServiceInfo.getResponseEntity()+" request body "+webServiceInfo.requestBody+" status code "+webServiceInfo.getResponseHttpStatusCode()+" response string "+webServiceInfo.getResponseString());
-                Log.d("iori_webservice", "login delegateResponseError: "+" error status "+errorMessage.getStatus()+" message "+errorMessage.getMessage());
+            public void delegateResponseError(VolleyError error, WebServiceInfo webServiceInfo, LoginRequest.ErrorMessage errorEntity) {
+                Log.d("iori_webservice", "login delegateResponseError: "+" response entity "+webServiceInfo.getResponseSuccessEntity()+" request body "+webServiceInfo.requestBody+" status code "+webServiceInfo.getResponseHttpStatusCode()+" response string "+webServiceInfo.getResponseString());
+                Log.d("iori_webservice", "login delegateResponseError: "+" error status "+errorEntity.getStatus()+" message "+errorEntity.getMessage());
             }
 
             @Override
-            public void parseResponseError(VolleyError error, WebServiceInfo webServiceInfo) {
+            public void unexpectedError(VolleyError error, WebServiceInfo webServiceInfo) {
                 Log.d("iori_webservice", "login parseResponseError: response code "+webServiceInfo.getResponseHttpStatusCode()+" request body "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
             }
         });
@@ -106,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
 
         Map<String,String> loginRequestMap=new HashMap<>(10);
         loginRequestMap.put("account","TAKO12345");
-        loginRequestMap.put("password","TAKO12345123");
+        loginRequestMap.put("password","TAKO12345");
         loginRequest.setRequestHeaders(loginRequestMap);
 
         WebServiceManager.getInstance().execute(loginRequest,"very haapy");
@@ -117,51 +178,5 @@ public class MainActivity extends AppCompatActivity {
                 WebServiceManager.getInstance().showHistoryWebServiceInfos();
             }
         },2000);
-    }
-
-    private static class ErrorMessage{
-        @SerializedName("status")
-        private String status;
-        @SerializedName("message")
-        private String message;
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
-
-    private static class LoginSuccessEntity{
-        @SerializedName("token")
-           private String token;
-        @SerializedName("expire_timestamp")
-        private long expire_timestamp;
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
-
-        public long getExpire_timestamp() {
-            return expire_timestamp;
-        }
-
-        public void setExpire_timestamp(long expire_timestamp) {
-            this.expire_timestamp = expire_timestamp;
-        }
     }
 }

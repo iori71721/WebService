@@ -7,8 +7,9 @@ import java.util.Map;
  * save webservice function data
  * @param <Q> request type
  * @param <R> response type
+ * @param <E> error entity type
  */
-public class WebServiceInfo<Q,R>{
+public class WebServiceInfo<Q,R,E>{
     /**
      * used for {@link WebServiceManager} see {@link WebServiceManager#execute(WebService, String)}
      */
@@ -21,8 +22,9 @@ public class WebServiceInfo<Q,R>{
     private Q requestEntity;
     private final Map<String, String> responseHeaders=new HashMap<String, String>(10);
     private String responseString;
-    private R responseEntity;
+    private R responseSuccessEntity;
     private int responseHttpStatusCode=-1;
+    public E errorEntity;
 
     public void setupCharSet(String charSet) {
         this.charSet=charSet;
@@ -44,8 +46,8 @@ public class WebServiceInfo<Q,R>{
         this.requestEntity = requestEntity;
     }
 
-    public R getResponseEntity() {
-        return responseEntity;
+    public R getResponseSuccessEntity() {
+        return responseSuccessEntity;
     }
 
     public String getResponseString() {
@@ -64,8 +66,8 @@ public class WebServiceInfo<Q,R>{
         this.responseHttpStatusCode = responseHttpStatusCode;
     }
 
-    public void setResponseEntity(R responseEntity) {
-        this.responseEntity = responseEntity;
+    public void setResponseSuccessEntity(R responseSuccessEntity) {
+        this.responseSuccessEntity = responseSuccessEntity;
     }
 
     public String getCharSet() {

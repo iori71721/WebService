@@ -9,9 +9,10 @@ import java.util.Map;
 /**
  * define webservice function
  * @param <Q> request type
- * @param <R> response type
+ * @param <R> success response type
+ * @param <E> error response type,example login fail...
  */
-public interface WebService<Q,R> {
+public interface WebService<Q,R,E> {
     String DEFAULT_CHAR_SET="utf-8";
     int SUCCESS_CODE =200;
     void setRequestHeaders(Map<String, String> requestHeaders);
@@ -29,6 +30,8 @@ public interface WebService<Q,R> {
     R getResponseEntity();
     String getResponse();
     int getResponseHttpStatusCode();
+    void setErrorEntity(E errorEntity);
+    E getErrorEntity();
 
     void setWebServiceMonitor(WebServiceManager.WebServiceMonitor webServiceMonitor);
     void setMonitorTag(String tag);

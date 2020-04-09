@@ -1,7 +1,6 @@
 package com.iori.custom.webservice.volley.request;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
@@ -24,35 +23,51 @@ import java.util.Map;
  *
  * @param <Q> request type
  * @param <R> response type
+ * @param <E> error entity type
  */
-public abstract class VolleyWebService<Q,R> extends Request<R> implements WebService<Q,R> {
+public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebService<Q,R,E> {
     private Context context;
     private Gson gson=new Gson();
-    protected WebServiceInfo<Q,R> webServiceInfo =new WebServiceInfo<>();
-    private BaseVolleySuccessListener successListener;
+    protected WebServiceInfo<Q,R,E> webServiceInfo =new WebServiceInfo<>();
+    private BaseVolleyRequestSuccessListener successListener;
     private Class<R> responseType;
+    private Class<E> errorEntityType;
     private final Response.ErrorListener errorVolleyListener=new Response.ErrorListener() {
         @Override
         public void onErrorResponse(VolleyError error) {
             setupResponseInfo(error.networkResponse,error.networkResponse.statusCode);
             callbackWebServiceFinish(webServiceInfo);
-            if(error instanceof ParseError){
-                parseResponseError(error);
+            if(isUnexpectedError(error)){
+                unexpectedError(error,webServiceInfo);
             }else {
-                delegateResponseError(error);
+                try {
+                    E errorEntity=parseResponseErrorEntity(error, webServiceInfo);
+                    setErrorEntity(errorEntity);
+                    delegateResponseError(error, webServiceInfo);
+                }catch (Exception e){
+                    unexpectedError(error,webServiceInfo);
+                }
             }
         }
     };
     public WebServiceMonitor webServiceMonitor;
 
-    public VolleyWebService(Context context, int method, String url, Class<R> responseType, BaseVolleySuccessListener successListener) {
+    public VolleyWebService(Context context, int method, String url, Class<R> responseType,Class<E> errorEntityType, BaseVolleyRequestSuccessListener successListener) {
         super(method, url, null);
         this.context=context;
         this.successListener=successListener;
         this.responseType=responseType;
+        this.errorEntityType=errorEntityType;
         setupErrorVolleyListener();
         setRequestMethod(method);
         setRequestUrl(url);
+    }
+
+    public static boolean isUnexpectedError(VolleyError error){
+        if(error instanceof ParseError){
+            return true;
+        }
+        return false;
     }
 
     private void setupErrorVolleyListener(){
@@ -126,12 +141,22 @@ public abstract class VolleyWebService<Q,R> extends Request<R> implements WebSer
 
     @Override
     public void setResponseEntity(R responseEntity) {
-        webServiceInfo.setResponseEntity(responseEntity);
+        webServiceInfo.setResponseSuccessEntity(responseEntity);
     }
 
     @Override
     public R getResponseEntity() {
-        return webServiceInfo.getResponseEntity();
+        return webServiceInfo.getResponseSuccessEntity();
+    }
+
+    @Override
+    public void setErrorEntity(E errorEntity) {
+        webServiceInfo.errorEntity=errorEntity;
+    }
+
+    @Override
+    public E getErrorEntity() {
+        return webServiceInfo.errorEntity;
     }
 
     @Override
@@ -152,9 +177,9 @@ public abstract class VolleyWebService<Q,R> extends Request<R> implements WebSer
             if(getResponseType().equals(String.class)) {
                 responseEntity =getResponseType().cast(webServiceInfo.getResponseString());
             }else{
-                responseEntity = parseResponseEntity(response, webServiceInfo.getResponseString());
+                responseEntity = parseResponseSuccessEntity(response, webServiceInfo.getResponseString());
             }
-            webServiceInfo.setResponseEntity(responseEntity);
+            webServiceInfo.setResponseSuccessEntity(responseEntity);
             return Response.success(responseEntity, HttpHeaderParser.parseCacheHeaders(response));
         }catch (Exception e){
             return Response.error(new ParseError(response));
@@ -163,7 +188,7 @@ public abstract class VolleyWebService<Q,R> extends Request<R> implements WebSer
 
     @Override
     protected void deliverResponse(R response) {
-        successListener.volleySuccess(response,webServiceInfo);
+        successListener.requestSuccess(response,webServiceInfo);
         callbackWebServiceFinish(webServiceInfo);
     }
 
@@ -213,11 +238,18 @@ public abstract class VolleyWebService<Q,R> extends Request<R> implements WebSer
         }
     }
 
-    protected abstract R parseResponseEntity(NetworkResponse response, String reponseString);
+    protected abstract R parseResponseSuccessEntity(NetworkResponse response, String reponseString);
 
-    protected abstract void delegateResponseError(VolleyError error);
+    protected abstract E parseResponseErrorEntity(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
 
-    protected abstract void parseResponseError(VolleyError error);
+    protected abstract void delegateResponseError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
+
+    /**
+     * unexpected server response error,like url fail,server shut down...
+     * @param error
+     * @param webServiceInfo
+     */
+    protected abstract void unexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
 
     protected abstract boolean ifEmptyRequest();
 
@@ -227,11 +259,29 @@ public abstract class VolleyWebService<Q,R> extends Request<R> implements WebSer
         return responseType;
     }
 
+    public Class<E> getErrorEntityType() {
+        return errorEntityType;
+    }
+
+    public Gson getGson() {
+        return gson;
+    }
+
     /**
      * @param <Q> request type
      * @param <R> response type
      */
-    public static interface BaseVolleySuccessListener<Q,R>{
-        void volleySuccess(R responseEntity,WebServiceInfo<Q,R> webServiceInfo);
+    public static interface BaseVolleyRequestSuccessListener<Q,R>{
+        void requestSuccess(R responseEntity, WebServiceInfo<Q,R,Object> webServiceInfo);
+    }
+
+    /**
+     *
+     * @param <Q> request type
+     * @param <E> error entity type
+     */
+    public static interface BaseVolleyRequestErrorListener<Q,E>{
+        void delegateResponseError(VolleyError error, WebServiceInfo<Q,Object,E> webServiceInfo,E errorEntity);
+        void unexpectedError(VolleyError error, WebServiceInfo<Q,Object,Object> webServiceInfo);
     }
 }
