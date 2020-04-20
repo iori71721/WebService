@@ -55,6 +55,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void setupExcludeInfo(VolleyFormRequest request){
+//        request.debug_ErrorKey=VolleyFormRequest.DEBUG_ERROR_KEY_SON_IGNORE;
+//        request.debug_ErrorKey=VolleyFormRequest.DEBUG_ERROR_KEY_PARENT_IGNORE;
+    }
     
     private void testVolleyMutil(){
         ServerListRequest serverListRequest=new ServerListRequest(this, new ServerListRequest.ServiceListRequestSuccessListener() {
@@ -78,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("iori_VolleyMutil", "unexpectedError webserviceinfo request entity "+webServiceInfo.getRequestEntity());
             }
         });
+
+//        setupExcludeInfo(serverListRequest);
+
         WebServiceManager.getInstance().execute(serverListRequest);
 
         LoginRequest loginRequest=new LoginRequest(this, new LoginRequest.LoginSuccessListener() {
@@ -104,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
         loginRequestMap.put("account","TAKO12345");
         loginRequestMap.put("password","TAKO12345123");
         loginRequest.setRequestHeaders(loginRequestMap);
+
+//        setupExcludeInfo(loginRequest);
 
         WebServiceManager.getInstance().execute(loginRequest);
     }

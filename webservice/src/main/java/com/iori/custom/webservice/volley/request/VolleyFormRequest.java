@@ -1,6 +1,7 @@
 package com.iori.custom.webservice.volley.request;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.android.volley.NetworkResponse;
 import com.android.volley.VolleyError;
@@ -21,6 +22,25 @@ public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     public VolleyFormRequest(Context context, int method, String url, Class<R> responseType, Class<E> errorEntityType, BaseVolleyRequestSuccessListener successListener, BaseVolleyRequestErrorListener formError) {
         super(context, method, url, responseType,errorEntityType, successListener);
         this.formError=formError;
+    }
+
+    @Override
+    protected void commonResponseErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+    }
+
+    @Override
+    protected void commonUnexpectedErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+
+    }
+
+    @Override
+    protected String parseResponseError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+        return "";
+    }
+
+    @Override
+    protected String parseUnexpectedError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+        return "";
     }
 
     @Override

@@ -1,6 +1,9 @@
 package com.iori.custom.webservice.volley.request;
 
 import android.content.Context;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
@@ -17,7 +20,9 @@ import com.iori.custom.webservice.volley.VolleyExecuter;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -26,9 +31,23 @@ import java.util.Map;
  * @param <E> error entity type
  */
 public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebService<Q,R,E> {
+    private boolean debug=false;
+    private final String TAG=VolleyWebService.class.getName();
+    public static final String DEBUG_ERROR_KEY_SON_IGNORE="DEBUG_ERROR_KEY_SON_IGNORE";
+    public static final String DEBUG_ERROR_KEY_PARENT_IGNORE="DEBUG_ERROR_KEY_PARENT_IGNORE";
+    public String debug_ErrorKey="debug_ErrorKey";
+
     private Context context;
     private Gson gson=new Gson();
     protected WebServiceInfo<Q,R,E> webServiceInfo =new WebServiceInfo<>();
+
+    protected boolean commonResponseErrorHandler=true;
+    protected boolean deliverResponseError =true;
+    protected boolean commonUnexpectedErrorHandler=true;
+    protected boolean deliverUnexpectedError =true;
+    protected @NonNull Set<String> notDownKeys=new HashSet<>(10);
+    protected @NonNull Set<String> onlyExecuteByDownKeys=new HashSet<>(10);
+
     private final BaseVolleyRequestSuccessListener successListener;
     private Class<R> responseType;
     private Class<E> errorEntityType;
@@ -38,19 +57,39 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
             setupResponseInfo(error.networkResponse,error.networkResponse.statusCode);
             callbackWebServiceFinish(webServiceInfo);
             if(isUnexpectedError(error)){
-                unexpectedError(error,webServiceInfo);
+                handleUnexpectedError(error,webServiceInfo);
             }else {
                 try {
                     E errorEntity=parseResponseErrorEntity(error, webServiceInfo);
                     setErrorEntity(errorEntity);
-                    delegateResponseError(error, webServiceInfo);
+                    handleResponseError(error,webServiceInfo);
                 }catch (Exception e){
-                    unexpectedError(error,webServiceInfo);
+                    handleUnexpectedError(error,webServiceInfo);
                 }
             }
         }
     };
     public WebServiceMonitor webServiceMonitor;
+
+    protected abstract void commonResponseErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
+
+    protected abstract void commonUnexpectedErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
+
+    protected abstract String parseResponseError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
+
+    protected abstract String parseUnexpectedError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
+
+    private boolean isNotDownKeys(String errorKey){
+        synchronized (notDownKeys){
+            return notDownKeys.contains(errorKey)?true:false;
+        }
+    }
+
+    private boolean isOnlyExecuteByDownKeys(String errorKey){
+        synchronized (onlyExecuteByDownKeys){
+            return onlyExecuteByDownKeys.contains(errorKey)?true:false;
+        }
+    }
 
     public VolleyWebService(Context context, int method, String url, Class<R> responseType,Class<E> errorEntityType, BaseVolleyRequestSuccessListener successListener) {
         super(method, url, null);
@@ -250,6 +289,28 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
      * @param webServiceInfo
      */
     protected abstract void unexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
+
+    private void handleResponseError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo){
+        String errorKey=debug?debug_ErrorKey:parseResponseError(error,webServiceInfo);
+        if(commonResponseErrorHandler && !isOnlyExecuteByDownKeys(errorKey)){
+            commonResponseErrorHandler(error,webServiceInfo);
+        }
+
+        if(deliverResponseError && !isNotDownKeys(errorKey)){
+            delegateResponseError(error,webServiceInfo);
+        }
+    }
+
+    private void handleUnexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo){
+        String errorKey=debug?debug_ErrorKey:parseUnexpectedError(error,webServiceInfo);
+        if(commonUnexpectedErrorHandler && !isOnlyExecuteByDownKeys(errorKey)){
+            commonUnexpectedErrorHandler(error,webServiceInfo);
+        }
+
+        if(deliverUnexpectedError && !isNotDownKeys(errorKey)){
+            unexpectedError(error,webServiceInfo);
+        }
+    }
 
     protected abstract boolean ifEmptyRequest();
 
