@@ -16,7 +16,7 @@ public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     private final String BOUNDARY = "------" + UUID.randomUUID().toString();
     private final String NEW_LINE = "\r\n";
     private final String MULTIPART_FORM_DATA = "multipart/form-data";
-    private BaseVolleyRequestErrorListener formError;
+    private final BaseVolleyRequestErrorListener formError;
 
     public VolleyFormRequest(Context context, int method, String url, Class<R> responseType, Class<E> errorEntityType, BaseVolleyRequestSuccessListener successListener, BaseVolleyRequestErrorListener formError) {
         super(context, method, url, responseType,errorEntityType, successListener);
@@ -84,5 +84,9 @@ public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     @Override
     public String fetchBody() {
         return webServiceInfo.requestBody;
+    }
+
+    public BaseVolleyRequestErrorListener getFormError() {
+        return formError;
     }
 }

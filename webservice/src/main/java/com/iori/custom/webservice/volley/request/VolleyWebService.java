@@ -29,7 +29,7 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
     private Context context;
     private Gson gson=new Gson();
     protected WebServiceInfo<Q,R,E> webServiceInfo =new WebServiceInfo<>();
-    private BaseVolleyRequestSuccessListener successListener;
+    private final BaseVolleyRequestSuccessListener successListener;
     private Class<R> responseType;
     private Class<E> errorEntityType;
     private final Response.ErrorListener errorVolleyListener=new Response.ErrorListener() {
@@ -265,6 +265,10 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
 
     public Gson getGson() {
         return gson;
+    }
+
+    public BaseVolleyRequestSuccessListener getSuccessListener() {
+        return successListener;
     }
 
     /**
