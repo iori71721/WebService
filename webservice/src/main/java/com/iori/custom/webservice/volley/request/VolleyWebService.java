@@ -182,6 +182,10 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
         return webServiceInfo.getRequestEntity();
     }
 
+    public Context getContext() {
+        return context;
+    }
+
     @Override
     public void setResponseEntity(R responseEntity) {
         webServiceInfo.setResponseSuccessEntity(responseEntity);
