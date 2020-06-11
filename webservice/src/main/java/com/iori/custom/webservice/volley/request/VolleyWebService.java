@@ -54,18 +54,22 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
     private final Response.ErrorListener errorVolleyListener=new Response.ErrorListener() {
         @Override
         public void onErrorResponse(VolleyError error) {
-            setupResponseInfo(error.networkResponse,error.networkResponse.statusCode);
-            callbackWebServiceFinish(webServiceInfo);
-            if(isUnexpectedError(error)){
-                handleUnexpectedError(error,webServiceInfo);
-            }else {
-                try {
-                    E errorEntity=parseResponseErrorEntity(error, webServiceInfo);
-                    setErrorEntity(errorEntity);
-                    handleResponseError(error,webServiceInfo);
-                }catch (Exception e){
-                    handleUnexpectedError(error,webServiceInfo);
+            if(error.networkResponse != null) {
+                setupResponseInfo(error.networkResponse, error.networkResponse.statusCode);
+                callbackWebServiceFinish(webServiceInfo);
+                if (isUnexpectedError(error)) {
+                    handleUnexpectedError(error, webServiceInfo);
+                } else {
+                    try {
+                        E errorEntity = parseResponseErrorEntity(error, webServiceInfo);
+                        setErrorEntity(errorEntity);
+                        handleResponseError(error, webServiceInfo);
+                    } catch (Exception e) {
+                        handleUnexpectedError(error, webServiceInfo);
+                    }
                 }
+            }else{
+                handleUnexpectedError(error, webServiceInfo);
             }
         }
     };

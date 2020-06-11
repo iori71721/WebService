@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
             public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object,Object> webServiceInfo) {
                 Log.d("iori_VolleyMutil", "unexpectedError request "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
                 Log.d("iori_VolleyMutil", "unexpectedError webserviceinfo request entity "+webServiceInfo.getRequestEntity());
+                Log.d("iori_VolleyMutil", "unexpectedError  error "+error);
             }
         });
 
