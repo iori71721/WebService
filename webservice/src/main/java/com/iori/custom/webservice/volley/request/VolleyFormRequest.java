@@ -25,11 +25,11 @@ public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     }
 
     @Override
-    protected void commonResponseErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+    protected void commonResponseErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, String errorKey) {
     }
 
     @Override
-    protected void commonUnexpectedErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo) {
+    protected void commonUnexpectedErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, String errorKey) {
 
     }
 
@@ -50,9 +50,9 @@ public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     }
 
     @Override
-    protected void delegateResponseError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo) {
+    protected void delegateResponseError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, boolean alreadyHandleByParent) {
         if(formError != null){
-            formError.delegateResponseError(error,webServiceInfo,webServiceInfo.errorEntity);
+            formError.delegateResponseError(error,webServiceInfo,webServiceInfo.errorEntity,alreadyHandleByParent );
         }
     }
 
@@ -63,9 +63,9 @@ public class VolleyFormRequest<Q,R,E> extends VolleyWebService<Q,R,E>{
     }
 
     @Override
-    protected void unexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo) {
+    protected void unexpectedError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, boolean alreadyHandleByParent) {
         if(formError != null){
-            formError.unexpectedError(error,webServiceInfo);
+            formError.unexpectedError(error,webServiceInfo, alreadyHandleByParent);
         }
     }
 

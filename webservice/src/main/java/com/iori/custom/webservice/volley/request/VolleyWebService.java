@@ -1,7 +1,6 @@
 package com.iori.custom.webservice.volley.request;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -45,8 +44,8 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
     protected boolean deliverResponseError =true;
     protected boolean commonUnexpectedErrorHandler=true;
     protected boolean deliverUnexpectedError =true;
-    protected @NonNull Set<String> notDownKeys=new HashSet<>(10);
-    protected @NonNull Set<String> onlyExecuteByDownKeys=new HashSet<>(10);
+    protected @NonNull Set<String> handleByParentKeys =new HashSet<>(10);
+
 
     private final BaseVolleyRequestSuccessListener successListener;
     private Class<R> responseType;
@@ -75,23 +74,17 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
     };
     public WebServiceMonitor webServiceMonitor;
 
-    protected abstract void commonResponseErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
+    protected abstract void commonResponseErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, String errorKey);
 
-    protected abstract void commonUnexpectedErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
+    protected abstract void commonUnexpectedErrorHandler(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, String errorKey);
 
     protected abstract String parseResponseError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
 
     protected abstract String parseUnexpectedError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo);
 
-    private boolean isNotDownKeys(String errorKey){
-        synchronized (notDownKeys){
-            return notDownKeys.contains(errorKey)?true:false;
-        }
-    }
-
-    private boolean isOnlyExecuteByDownKeys(String errorKey){
-        synchronized (onlyExecuteByDownKeys){
-            return onlyExecuteByDownKeys.contains(errorKey)?true:false;
+    protected final boolean isHandleByParentKey(String errorKey){
+        synchronized (handleByParentKeys){
+            return handleByParentKeys.contains(errorKey)?true:false;
         }
     }
 
@@ -289,34 +282,47 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
 
     protected abstract E parseResponseErrorEntity(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
 
-    protected abstract void delegateResponseError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
+    protected abstract void delegateResponseError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, boolean alreadyHandleByParent);
 
     /**
      * unexpected server response error,like url fail,server shut down...
      * @param error
      * @param webServiceInfo
+     * @param alreadyHandleByParent
      */
-    protected abstract void unexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo);
+    protected abstract void unexpectedError(VolleyError error, WebServiceInfo<Q, R, E> webServiceInfo, boolean alreadyHandleByParent);
 
     private void handleResponseError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo){
         String errorKey=debug?debug_ErrorKey:parseResponseError(error,webServiceInfo);
-        if(commonResponseErrorHandler && !isOnlyExecuteByDownKeys(errorKey)){
-            commonResponseErrorHandler(error,webServiceInfo);
+        boolean handleByParent=commonResponseErrorHandler && isHandleByParentKey(errorKey);
+
+        if(handleByParent){
+            commonResponseErrorHandler(error,webServiceInfo, errorKey);
         }
 
-        if(deliverResponseError && !isNotDownKeys(errorKey)){
-            delegateResponseError(error,webServiceInfo);
+        if(deliverResponseError){
+            if(handleByParent){
+                delegateResponseError(error,webServiceInfo,true);
+            }else{
+                delegateResponseError(error,webServiceInfo,false);
+            }
         }
     }
 
     private void handleUnexpectedError(VolleyError error, WebServiceInfo<Q,R,E> webServiceInfo){
         String errorKey=debug?debug_ErrorKey:parseUnexpectedError(error,webServiceInfo);
-        if(commonUnexpectedErrorHandler && !isOnlyExecuteByDownKeys(errorKey)){
-            commonUnexpectedErrorHandler(error,webServiceInfo);
+        boolean handleByParent=commonUnexpectedErrorHandler && isHandleByParentKey(errorKey);
+
+        if(handleByParent){
+            commonUnexpectedErrorHandler(error,webServiceInfo,errorKey);
         }
 
-        if(deliverUnexpectedError && !isNotDownKeys(errorKey)){
-            unexpectedError(error,webServiceInfo);
+        if(deliverUnexpectedError){
+            if(handleByParent){
+                unexpectedError(error,webServiceInfo, true);
+            }else{
+                unexpectedError(error,webServiceInfo, false);
+            }
         }
     }
 
@@ -354,7 +360,7 @@ public abstract class VolleyWebService<Q,R,E> extends Request<R> implements WebS
      * @param <E> error entity type
      */
     public static interface BaseVolleyRequestErrorListener<Q,E>{
-        void delegateResponseError(VolleyError error, WebServiceInfo<Q,Object,E> webServiceInfo,E errorEntity);
-        void unexpectedError(VolleyError error, WebServiceInfo<Q,Object,Object> webServiceInfo);
+        void delegateResponseError(VolleyError error, WebServiceInfo<Q, Object, E> webServiceInfo, E errorEntity, boolean alreadyHandleByParent);
+        void unexpectedError(VolleyError error, WebServiceInfo<Q, Object, Object> webServiceInfo, boolean alreadyHandleByParent);
     }
 }

@@ -72,13 +72,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }, new ServerListRequest.ServiceListRequestErrorListener() {
             @Override
-            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object,String> webServiceInfo, String errorEntity) {
+            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object, String> webServiceInfo, String errorEntity, boolean alreadyHandleByParent) {
                 Log.d("iori_VolleyMutil", "delegateResponseError request "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
                 Log.d("iori_VolleyMutil", "delegateResponseError webservieinfo request entity "+webServiceInfo.getRequestEntity()+" error entity "+webServiceInfo.errorEntity);
             }
 
             @Override
-            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object,Object> webServiceInfo) {
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object, Object> webServiceInfo, boolean alreadyHandleByParent) {
                 Log.d("iori_VolleyMutil", "unexpectedError request "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
                 Log.d("iori_VolleyMutil", "unexpectedError webserviceinfo request entity "+webServiceInfo.getRequestEntity());
                 Log.d("iori_VolleyMutil", "unexpectedError  error "+error);
@@ -97,13 +97,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }, new LoginRequest.LoginFailListener() {
             @Override
-            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object, LoginRequest.ErrorMessage> webServiceInfo, LoginRequest.ErrorMessage errorEntity) {
+            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object, LoginRequest.ErrorMessage> webServiceInfo, LoginRequest.ErrorMessage errorEntity, boolean alreadyHandleByParent) {
                 Log.d("iori_VolleyMutil", "login delegateResponseError: error response "+webServiceInfo.getResponseString()+" message "+errorEntity.getMessage());
                 Log.d("iori_VolleyMutil", "login delegateResponseError: webserviceinfo request entity "+webServiceInfo.getRequestEntity()+" request body "+webServiceInfo.requestBody);
             }
 
             @Override
-            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object, Object> webServiceInfo) {
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object, Object> webServiceInfo, boolean alreadyHandleByParent) {
                 Log.d("iori_VolleyMutil", "login unexpectedError: request body "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString()+" status code "+webServiceInfo.getResponseHttpStatusCode());
                 Log.d("iori_VolleyMutil", "login unexpectedError: webserviceinfo request entity "+webServiceInfo.getRequestEntity());
             }
@@ -133,13 +133,13 @@ public class MainActivity extends AppCompatActivity {
         }
                 , new VolleyWebService.BaseVolleyRequestErrorListener<Map<String, String>, String>() {
             @Override
-            public void delegateResponseError(VolleyError error,WebServiceInfo<Map<String, String>,Object, String> webServiceInfo,String errorEntity) {
+            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object, String> webServiceInfo, String errorEntity, boolean alreadyHandleByParent) {
                 Log.d("iori_webservice", "delegateResponseError: "+" response code "+webServiceInfo.getResponseHttpStatusCode()+" string "+webServiceInfo.getResponseString());
                 Log.d("iori_webservice", "delegateResponseError: "+"error entity "+errorEntity);
             }
 
             @Override
-            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>,Object, Object> webServiceInfo) {
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object, Object> webServiceInfo, boolean alreadyHandleByParent) {
                 Log.d("iori_webservice", "parseResponseError: "+" response code "+webServiceInfo.getResponseHttpStatusCode()+" string "+webServiceInfo.getResponseString());
             }
         }
@@ -164,13 +164,13 @@ public class MainActivity extends AppCompatActivity {
         VolleyFormRequest<Map<String, String>, LoginRequest.LoginSuccessEntity, LoginRequest.ErrorMessage> loginRequest=new VolleyFormRequest<>(this, WebService.Method.POST, loginRequestUrl+"1234"
                 , LoginRequest.LoginSuccessEntity.class, LoginRequest.ErrorMessage.class, loginSuccessListener, new VolleyWebService.BaseVolleyRequestErrorListener<Map<String, String>, LoginRequest.ErrorMessage>() {
             @Override
-            public void delegateResponseError(VolleyError error, WebServiceInfo webServiceInfo, LoginRequest.ErrorMessage errorEntity) {
+            public void delegateResponseError(VolleyError error, WebServiceInfo webServiceInfo, LoginRequest.ErrorMessage errorEntity, boolean alreadyHandleByParent) {
                 Log.d("iori_webservice", "login delegateResponseError: "+" response entity "+webServiceInfo.getResponseSuccessEntity()+" request body "+webServiceInfo.requestBody+" status code "+webServiceInfo.getResponseHttpStatusCode()+" response string "+webServiceInfo.getResponseString());
                 Log.d("iori_webservice", "login delegateResponseError: "+" error status "+errorEntity.getStatus()+" message "+errorEntity.getMessage());
             }
 
             @Override
-            public void unexpectedError(VolleyError error, WebServiceInfo webServiceInfo) {
+            public void unexpectedError(VolleyError error, WebServiceInfo webServiceInfo, boolean alreadyHandleByParent) {
                 Log.d("iori_webservice", "login parseResponseError: response code "+webServiceInfo.getResponseHttpStatusCode()+" request body "+webServiceInfo.requestBody+" response "+webServiceInfo.getResponseString());
             }
         });
