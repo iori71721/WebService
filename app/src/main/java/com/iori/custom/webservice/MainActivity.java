@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.VolleyError;
 import com.iori.custom.webservice.volley.request.VolleyFormRequest;
 import com.iori.custom.webservice.volley.request.VolleyWebService;
+import com.iori.custom.webservice.volley.request.test.JsonLoginRequest;
 import com.iori.custom.webservice.volley.request.test.LoginRequest;
 import com.iori.custom.webservice.volley.request.test.ServerListRequest;
 
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private String serverListUrl="https://service-demo.hotsnet.com/api/app/Site";
     private Button test_volley;
     private Button test_volley_mutli;
+    private Button test_volley_json;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private void initLayout(){
         test_volley=findViewById(R.id.test_volley);
         test_volley_mutli=findViewById(R.id.test_volley_mutli);
+        test_volley_json=findViewById(R.id.test_volley_json);
     }
 
     private void triggerSetup(){
@@ -54,6 +57,40 @@ public class MainActivity extends AppCompatActivity {
                 testVolleyMutil();
             }
         });
+        test_volley_json.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                test_volley_json();
+            }
+        });
+    }
+
+    private void test_volley_json(){
+        JsonLoginRequest loginRequest=new JsonLoginRequest(this, new JsonLoginRequest.LoginSuccessListener() {
+            @Override
+            public void requestSuccess(JsonLoginRequest.LoginSuccessEntity responseEntity, WebServiceInfo<Map<String, String>, JsonLoginRequest.LoginSuccessEntity, Object> webServiceInfo) {
+                Log.d("iori_volley_json", "requestSuccess: token "+responseEntity.getToken());
+            }
+        }, new JsonLoginRequest.LoginFailListener() {
+            @Override
+            public void delegateResponseError(VolleyError error, WebServiceInfo<Map<String, String>, Object, JsonLoginRequest.ErrorMessage> webServiceInfo, JsonLoginRequest.ErrorMessage errorEntity, boolean alreadyHandleByParent) {
+                Log.d("iori_volley_json", "delegateResponseError: "+errorEntity.getMessage());
+            }
+
+            @Override
+            public void unexpectedError(VolleyError error, WebServiceInfo<Map<String, String>, Object, Object> webServiceInfo, boolean alreadyHandleByParent) {
+                Log.d("iori_volley_json", "unexpectedError: ");
+            }
+        });
+
+        JsonLoginRequest.LoginRequestEntity loginRequestEntity=new JsonLoginRequest.LoginRequestEntity();
+        loginRequestEntity.setAccount("IORI12345");
+        loginRequestEntity.setPassword("IORI1234567");
+        loginRequestEntity.setDeviceID("test1");
+
+        loginRequest.setRequestEntity(loginRequestEntity);
+
+        WebServiceManager.getInstance().execute(loginRequest);
     }
 
     private void setupExcludeInfo(VolleyFormRequest request){
